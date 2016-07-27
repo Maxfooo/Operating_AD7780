@@ -87,26 +87,19 @@ void loop()
                 char debug = Serial.read();
                 Serial.print("Received: ");
                 Serial.println(debug);
-                
-                if (debug == '+') 
+                if (debug == '+')
                 {
                   digitalWrite(npdrst_pin, LOW);
-                  digitalWrite(sclk_pin, LOW);
-                  digitalWrite(gain_pin, LOW);
-                  digitalWrite(filter_pin, LOW);
                 }
                 else
                 {
                 
                   digitalWrite(npdrst_pin, HIGH); 
-                  digitalWrite(gain_pin, GAIN_SETTING);
-                  digitalWrite(filter_pin, FILTER_SETTING);
-                  //delay(POWER_UP_TIME);
+                  delay(POWER_UP_TIME);
                   //delay(FILTER_SETTLE_TIME);
                   
   		  operate_adc(0); // Debugging
                   Serial.println("\nEnded operate command");
-                  digitalWrite(npdrst_pin, LOW); 
                 }
 	}
 
