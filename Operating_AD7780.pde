@@ -46,10 +46,11 @@ int bit11 = 45;
 
 
 unsigned int dac_code = MAX_DAC_CODE;
+unsigned int dac_code_ff = 0;
 unsigned int nReady = 1;
-unsigned int adc_word;
-unsigned int adc_value;
-unsigned int adc_psw;
+unsigned int adc_word = 0;
+unsigned int adc_value = 0;
+unsigned int adc_psw = 0;
 
 void setup()
 {
@@ -82,6 +83,7 @@ void setup()
 
 void loop()
 {
+        /*
 	if (Serial.available() > 0)
 	{
                 char debug = Serial.read();
@@ -102,33 +104,47 @@ void loop()
                   Serial.println("\nEnded operate command");
                 }
 	}
+        */
 
-	/*
-	if (Serial.available() > 0)
+	//
+	if (Serial.available() > 0) // Reset
 	{
 		dac_code = 0;
+                dac_code_ff = 0;
 		set_dac_code(dac_code);
+                
 	}
 	
 	while (dac_code < MAX_DAC_CODE)
 	{
-		digitalWrite(npdrst_pin, HIGH);
-		delay(POWER_UP_TIME);
+                if (Serial.available() > 0) // Exit
+	        {
+                  char entry = Serial.read();
+                  if (entry == 'x') 
+                  {
+                   dac_code = MAX_DAC_CODE; 
+                  }
+                }
+                else
+                {
+		  digitalWrite(npdrst_pin, HIGH);
+		  //delay(POWER_UP_TIME);
 		
-		for (int i = 0; i < MAX_SAMPLES; i++)
-		{
-			operate_adc(dac_code);
-		}
+		  for (int i = 0; i < MAX_SAMPLES; i++)
+		  {
+		  	operate_adc(dac_code);
+		  }
 		
-		digitalWrite(npdrst_pin, LOW);
-		delay(POWER_DOWN_TIME);
+		  digitalWrite(npdrst_pin, LOW);
+		  //delay(POWER_DOWN_TIME);
 		
-		set_dac_code(dac_code);
-		delayMicroseconds(DAC_SETTLE_TIME);
+		  set_dac_code(dac_code);
+		  delayMicroseconds(DAC_SETTLE_TIME);
 		
-		dac_code++;
+		  dac_code++;
+                }
 	}
-	*/
+	//
 }
 
 void operate_adc(unsigned int dac_code)
@@ -137,8 +153,8 @@ void operate_adc(unsigned int dac_code)
 	{
 		nReady = digitalRead(dout_pin);
 	}
-        Serial.print("nReady: ");
-        Serial.println(nReady);
+        //Serial.print("nReady: ");
+        //Serial.println(nReady);
 	nReady = 1;
 	adc_word = read_adc();
 	adc_value = (adc_word >> 8);
@@ -148,11 +164,12 @@ void operate_adc(unsigned int dac_code)
 
 void print_adc_data(unsigned int dacCode, unsigned int adcValue, unsigned int adcPsw)
 {
-	if (dacCode == 0)
+	if (dacCode == 0 && dac_code_ff == 0)
 	{
 		Serial.println("DAC Code, ADC Value, PSW");
+                dac_code_ff = 1;
 	}
-	Serial.print(dacCode, BIN);
+	Serial.print(dacCode);
 	Serial.print(",");
 	Serial.print(adcValue, BIN);
 	Serial.print(",");
