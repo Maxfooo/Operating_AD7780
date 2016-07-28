@@ -44,6 +44,11 @@ int bit9 = 41;
 int bit10 = 43;
 int bit11 = 45;
 
+// Start DAQ pins
+int n_pin = 84;
+int startConversion = 0;
+int startConversionFF = 0;
+
 
 unsigned int dac_code = MAX_DAC_CODE;
 unsigned int dac_code_ff = 0;
@@ -74,6 +79,9 @@ void setup()
   pinMode(bit9, OUTPUT);
   pinMode(bit10, OUTPUT);
   pinMode(bit11, OUTPUT);
+
+
+  pinMode(n_pin, INPUT);
   
   digitalWrite(npdrst_pin, HIGH);
   digitalWrite(gain_pin, GAIN_SETTING);
@@ -106,13 +114,22 @@ void loop()
 	}
         */
 
-	//
+	/*
 	if (Serial.available() > 0) // Reset
 	{
 		dac_code = 0;
                 dac_code_ff = 0;
 		set_dac_code(dac_code);
                 
+	}
+        */
+        startConversion = digitalRead(n_pin);
+        if (startConversion == 1 && startConversionFF == 0) // Reset
+	{
+                startConversionFF = 1;
+		dac_code = 0;
+                dac_code_ff = 0;
+		set_dac_code(dac_code);
 	}
 	
 	while (dac_code < MAX_DAC_CODE)
@@ -144,6 +161,7 @@ void loop()
 		  dac_code++;
                 }
 	}
+        startConversionFF = 0;
 	//
 }
 
@@ -159,22 +177,29 @@ void operate_adc(unsigned int dac_code)
 	adc_word = read_adc();
 	adc_value = (adc_word >> 8);
 	adc_psw = adc_word & 0x000000FF;
+
+        
 	print_adc_data(dac_code, adc_value, adc_psw);
+        
 }
 
 void print_adc_data(unsigned int dacCode, unsigned int adcValue, unsigned int adcPsw)
-{
+{        
 	if (dacCode == 0 && dac_code_ff == 0)
 	{
-		Serial.println("DAC Code, ADC Value, PSW");
+                Serial.print("#S|LOGDATA|["); // Gobetweeno
+		Serial.print("DAC Code, ADC Value, PSW");
+                Serial.println("]#"); // Gobetweeno
                 dac_code_ff = 1;
 	}
+        Serial.print("#S|LOGDATA|["); // Gobetweeno
 	Serial.print(dacCode);
 	Serial.print(",");
 	Serial.print(adcValue, BIN);
 	Serial.print(",");
 	Serial.print(adcPsw, BIN);
-	Serial.print("\n");
+	//Serial.print("\n");
+        Serial.println("]#"); // Gobetweeno
 }
 
 void set_dac_code(unsigned int dacCode)
