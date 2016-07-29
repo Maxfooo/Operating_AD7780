@@ -3,4 +3,4 @@
 This program is for ChipKit using the MPIDE, and it can work on Arduino.
 
 * This uses Gobetwino to record data to a file.
-* http://mikmo.dk/gobetwino.html
+* http://www.mikmo.dk/gobetwinodownload.html
