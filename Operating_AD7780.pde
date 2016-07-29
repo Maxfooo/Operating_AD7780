@@ -50,6 +50,7 @@ int bit11 = 45;
 int n_pin = 84;
 int startConversion = 0;
 int startConversionFF = 0;
+int triggerAD = 52;
 
 // Indicator
 int led = 13;
@@ -90,6 +91,8 @@ void setup()
   
   pinMode(led, OUTPUT);
   
+  pinMode(triggerAD, OUTPUT);
+  
   digitalWrite(npdrst_pin, HIGH);
   digitalWrite(gain_pin, GAIN_SETTING);
   digitalWrite(filter_pin, FILTER_SETTING); 
@@ -98,38 +101,7 @@ void setup()
 
 void loop()
 {
-        /*
-	if (Serial.available() > 0)
-	{
-                char debug = Serial.read();
-                Serial.print("Received: ");
-                Serial.println(debug);
-                if (debug == '+')
-                {
-                  digitalWrite(npdrst_pin, LOW);
-                }
-                else
-                {
-                
-                  digitalWrite(npdrst_pin, HIGH); 
-                  delay(POWER_UP_TIME);
-                  //delay(FILTER_SETTLE_TIME);
-                  
-  		 operate_adc(0); // Debugging
-                  Serial.println("\nEnded operate command");
-                }
-	}
-        */
-
-	/*
-	if (Serial.available() > 0) // Reset
-	{
-		dac_code = 0;
-                dac_code_ff = 0;
-		set_dac_code(dac_code);
-                
-	}
-        */
+        
         startConversion = digitalRead(n_pin);
         if (startConversion == 1 && startConversionFF == 0) // Reset
 	{
@@ -142,46 +114,43 @@ void loop()
 	
 	while (dac_code < MAX_DAC_CODE)
 	{
-                if (Serial.available() > 0) // Exit
-	       {
-                  char entry = Serial.read();
-                  if (entry == 'x') 
-                  {
-                   dac_code = MAX_DAC_CODE; 
-                  }
-                }
-                else
-                {
-		 digitalWrite(npdrst_pin, HIGH);
-		 //delay(POWER_UP_TIME);
+		  digitalWrite(npdrst_pin, HIGH);
 		
-		 for (int i = 0; i < MAX_SAMPLES; i++)
-		 {
-		 	adc_word_buffer[i] = operate_adc(dac_code);
-		 }
+		  for (int i = 0; i < MAX_SAMPLES; i++)
+		  {
+		  	adc_word_buffer[i] = operate_adc(dac_code);
+		  }
 		
-		 digitalWrite(npdrst_pin, LOW);
-		 //delay(POWER_DOWN_TIME);
-
-                  for (int i = 0; i < MAX_SAMPLES; i++)
-		 {
-		 	adc_value = (adc_word_buffer[i] >> 8);
-	               adc_psw = adc_word_buffer[i] & 0x000000FF;
-	               print_adc_data(dac_code, adc_value, adc_psw);
-                        delay(DATA_LOG_DELAY);
-		 }
+		  digitalWrite(npdrst_pin, LOW);
                   
+                  
+                  for (int i = 0; i < MAX_SAMPLES; i++)
+		  {
+		  	adc_value = (adc_word_buffer[i] >> 8);
+	                adc_psw = adc_word_buffer[i] & 0x000000FF;
+	                print_adc_data(dac_code, adc_value, adc_psw);
+                        delay(DATA_LOG_DELAY);
+		  }
 
-		 set_dac_code(dac_code);
-		 delayMicroseconds(DAC_SETTLE_TIME);
+                  triggerAnalogDiscovery();
+
+		  delayMicroseconds(DAC_SETTLE_TIME);
 		
-		 dac_code++;
-                }
+		  dac_code++;
+                
                 
 	}
         startConversionFF = 0;
         digitalWrite(led, LOW);
-	//
+
+        
+}
+
+void triggerAnalogDiscovery()
+{
+  digitalWrite(triggerAD, HIGH);
+  delay(10);
+  digitalWrite(triggerAD, LOW);
 }
 
 unsigned int operate_adc(unsigned int dac_code)
@@ -190,8 +159,6 @@ unsigned int operate_adc(unsigned int dac_code)
 	{
 		nReady = digitalRead(dout_pin);
 	}
-        //Serial.print("nReady: ");
-        //Serial.println(nReady);
 	nReady = 1;
 	adc_word = read_adc();
         return adc_word;
@@ -217,45 +184,6 @@ void print_adc_data(unsigned int dacCode, unsigned int adcValue, unsigned int ad
         Serial.println("]#"); // Gobetweeno
 }
 
-void set_dac_code(unsigned int dacCode)
-{
-	if((dacCode&0x001) ==0x001) digitalWrite(bit0, HIGH);
-	else digitalWrite(bit0, LOW);
-
-	if((dacCode&0x002) ==0x002) digitalWrite(bit1, HIGH);
-	else digitalWrite(bit1, LOW);
-
-	if((dacCode&0x004) ==0x004) digitalWrite(bit2, HIGH);
-	else digitalWrite(bit2, LOW);
-
-	if((dacCode&0x008) ==0x008) digitalWrite(bit3, HIGH);
-	else digitalWrite(bit3, LOW);
-
-	if((dacCode&0x010) ==0x010) digitalWrite(bit4, HIGH);
-	else digitalWrite(bit4, LOW);
-
-	if((dacCode&0x020) ==0x020) digitalWrite(bit5, HIGH);
-	else digitalWrite(bit5, LOW);
-
-	if((dacCode&0x040) ==0x040) digitalWrite(bit6, HIGH);
-	else digitalWrite(bit6, LOW);
-
-	if((dacCode&0x080) ==0x080) digitalWrite(bit7, HIGH);
-	else digitalWrite(bit7, LOW);
-
-	if((dacCode&0x100) ==0x100) digitalWrite(bit8, HIGH);
-	else digitalWrite(bit8, LOW);
-
-	if((dacCode&0x200) ==0x200) digitalWrite(bit9, HIGH);
-	else digitalWrite(bit9, LOW);
-
-	if((dacCode&0x400) ==0x400) digitalWrite(bit10, HIGH);
-	else digitalWrite(bit10, LOW);
-
-	if((dacCode&0x800) ==0x800) digitalWrite(bit11, HIGH);
-	else digitalWrite(bit11, LOW);
-}
-
 unsigned int read_adc()
 {
 	unsigned int data = 0;
@@ -272,8 +200,8 @@ unsigned int read_adc()
 		
                 if (i < DATA_WIDTH - 1) // leave the clock high for the LSB of whole adc_word
                 {
-		 delayMicroseconds(READ_DATA_HALF_PERIOD);
-		 digitalWrite(sclk_pin, LOW);
+		  delayMicroseconds(READ_DATA_HALF_PERIOD);
+		  digitalWrite(sclk_pin, LOW);
                 }
 	}
 	
