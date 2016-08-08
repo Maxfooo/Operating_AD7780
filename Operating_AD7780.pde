@@ -22,7 +22,7 @@ const unsigned long DATA_LOG_DELAY = 50; // ms - milliseconds
 const unsigned long READ_DATA_HALF_PERIOD = 2; // us - microsecond
 const unsigned long DAC_SETTLE_TIME = 1; // us - microsecond
 
-const unsigned int MAX_DAC_CODE = 4096;
+const unsigned int MAX_DAC_CODE = 4095;
 const unsigned int MAX_SAMPLES = 10;
 
 // ADC pins
@@ -50,7 +50,7 @@ int bit11 = 45;
 int n_pin = 84;
 int startConversion = 0;
 int startConversionFF = 0;
-int triggerAD = 52;
+int triggerNC = 52;
 
 // Indicator
 int led = 13;
@@ -73,25 +73,12 @@ void setup()
   pinMode(sclk_pin, OUTPUT);
   pinMode(filter_pin, OUTPUT);
   pinMode(npdrst_pin, OUTPUT);
-  
-  pinMode(bit0, OUTPUT);
-  pinMode(bit1, OUTPUT);
-  pinMode(bit2, OUTPUT);
-  pinMode(bit3, OUTPUT);
-  pinMode(bit4, OUTPUT);
-  pinMode(bit5, OUTPUT);
-  pinMode(bit6, OUTPUT);
-  pinMode(bit7, OUTPUT);
-  pinMode(bit8, OUTPUT);
-  pinMode(bit9, OUTPUT);
-  pinMode(bit10, OUTPUT);
-  pinMode(bit11, OUTPUT);
 
   pinMode(n_pin, INPUT);
   
   pinMode(led, OUTPUT);
   
-  pinMode(triggerAD, OUTPUT);
+  pinMode(triggerNC, OUTPUT);
   
   digitalWrite(npdrst_pin, HIGH);
   digitalWrite(gain_pin, GAIN_SETTING);
@@ -108,7 +95,6 @@ void loop()
                 startConversionFF = 1;
 		dac_code = 0;
                 dac_code_ff = 0;
-		set_dac_code(dac_code);
                 digitalWrite(led, HIGH);
 	}
 	
@@ -132,13 +118,9 @@ void loop()
                         delay(DATA_LOG_DELAY);
 		  }
 
-                  triggerAnalogDiscovery();
-
+                  triggerNextCode();
+                  dac_code++;
 		  delayMicroseconds(DAC_SETTLE_TIME);
-		
-		  dac_code++;
-                
-                
 	}
         startConversionFF = 0;
         digitalWrite(led, LOW);
@@ -146,11 +128,11 @@ void loop()
         
 }
 
-void triggerAnalogDiscovery()
+void triggerNextCode()
 {
-  digitalWrite(triggerAD, HIGH);
+  digitalWrite(triggerNC, HIGH);
   delay(10);
-  digitalWrite(triggerAD, LOW);
+  digitalWrite(triggerNC, LOW);
 }
 
 unsigned int operate_adc(unsigned int dac_code)
@@ -180,7 +162,6 @@ void print_adc_data(unsigned int dacCode, unsigned int adcValue, unsigned int ad
 	Serial.print(adcValue, BIN);
 	Serial.print(",");
 	Serial.print(adcPsw, BIN);
-	//Serial.print("\n");
         Serial.println("]#"); // Gobetweeno
 }
 
