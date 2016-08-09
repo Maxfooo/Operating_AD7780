@@ -55,14 +55,15 @@ void loop()
     // Operate ADC
     /*******************************/
     case 1:
-      
       if (dac_code >= MAX_DAC_CODE)
       {
        conversionDone = 1;
+       Serial.println("Done");
       }
       else
       {
         conversionDone = 0;
+        current_sample = 0;
         digitalWrite(npdrst_pin, HIGH);
         for (int i = 0; i < MAX_SAMPLES; i++)
         {
@@ -70,6 +71,7 @@ void loop()
         }
         digitalWrite(npdrst_pin, LOW);
       
+        Serial.println("Converted");
         triggerNextCode();
         dac_code++;
       }
@@ -83,7 +85,6 @@ void loop()
     
       if (current_sample >= MAX_SAMPLES)
       {
-        current_sample = 0;
         Serial.println("NoSample");
       }
       else
@@ -104,6 +105,7 @@ void loop()
       dac_code = 0;
       current_sample = 0;
       zeroFillBuffer();
+      Serial.println("Reset");
       break;
       
     /*******************************/
@@ -118,6 +120,11 @@ void loop()
     /*******************************/
     case 99:
       break;
+      
+    default:
+      Serial.println("Default");
+      break;
+      
     
   }
 }
@@ -144,7 +151,7 @@ void print_adc_data(unsigned int dacCode, unsigned int adcValue, unsigned int ad
         String dacCodeStr = String(dacCode);
         String adcValueStr = String(adcValue, BIN);
         String adcPswStr = String(adcPsw, BIN);
-        String outStr = dacCodeStr + ',' + adcValueStr + ',' + adcPsw;
+        String outStr = dacCodeStr + "," + adcValueStr + "," + adcPsw;
 	Serial.println(outStr);
 }
 
